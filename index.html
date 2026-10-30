@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#e8f3f9" />
+  <title>矢野 乃梨佳 — Portfolio</title>
+  <meta name="description" content="液タブの画面を操作して作品を見るポートフォリオ" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho+B1:wght@600;800&family=JetBrains+Mono:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* スマホ：アニメ作品のとき操作ヒントが縦に引き伸ばされて、四角いぼかしになっていたのを修正 */
+    @media (orientation: portrait), (max-width: 820px), (max-height: 540px) {
+      .hint, .viewport.has-timeline .hint { top: 3.6em; bottom: auto !important; height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 背景：閲覧中の作品をぼかして映す -->
+  <div class="backdrop" aria-hidden="true"><i></i><i></i></div>
+  <div class="desk-light" aria-hidden="true"></div>
+
+  <main class="tablet" id="tablet">
+    <!-- 左ベゼル：エクスプレスキー + タッチリング -->
+    <aside class="bezel-left" aria-label="エクスプレスキー">
+      <div class="brand">LINK<span>/</span>PAD</div>
+      <button class="xkey" data-act="prev"  title="前の作品 [←]"><span>◀</span><small>PREV</small></button>
+      <button class="xkey" data-act="next"  title="次の作品 [→]"><span>▶</span><small>NEXT</small></button>
+      <div class="ring" id="ring" title="タッチリング：ドラッグでズーム">
+        <div class="ring-dot" id="ringDot"></div>
+        <button class="ring-center" data-act="fit" title="画面に合わせる [0]">FIT</button>
+      </div>
+      <button class="xkey" data-act="undo"  title="元に戻す [Ctrl+Z]"><span>↶</span><small>UNDO</small></button>
+      <button class="xkey d-only" data-act="rotR"  title="右回転 [R]"><span>↻</span><small>ROT</small></button>
+      <button class="xkey m-only" data-act="fit" title="画面に合わせる"><span>⤢</span><small>FIT</small></button>
+      <button class="xkey" data-act="clear" title="線をすべて消す [Delete]"><span>⌫</span><small>CLEAR</small></button>
+      <div class="led" id="led"></div>
+    </aside>
+
+    <!-- 液晶 -->
+    <section class="screen" id="screen">
+      <div class="glare" aria-hidden="true"></div>
+
+      <!-- メニューバー -->
+      <header class="menubar">
+        <div class="app-name">◆ LINK PAINT</div>
+        <nav class="menus">
+          <button data-panel="works" class="is-on">作品</button>
+          <button data-panel="about">プロフィール</button>
+          <button data-act="help"><span class="d-only">ショートカット</span><span class="m-only">使い方</span></button>
+        </nav>
+        <div class="filename" id="filename">norika_yano_portfolio</div>
+        <button class="sound-btn" id="soundBtn" title="効果音 オン / オフ">♪</button>
+        <button class="me" data-panel="about" title="プロフィール"><img id="meIcon" alt="" /></button>
+      </header>
+
+      <div class="workspace">
+        <!-- ツールバー -->
+        <div class="toolbar" role="toolbar" aria-label="ツール">
+          <button class="tool is-on" data-tool="pen" title="ペン [B]　Alt+クリックでスポイト"><svg viewBox="0 0 24 24"><path d="M3 21l3.5-1 11-11-2.5-2.5-11 11L3 21z M15.5 5.5l2.5 2.5 2-2-2.5-2.5z"/></svg></button>
+          <button class="tool" data-tool="eraser" title="消しゴム [E] — 描いた線をなぞって消す"><svg viewBox="0 0 24 24"><path d="M8.5 20H20M4.6 14.6l8.8-8.8a2 2 0 012.8 0l3 3a2 2 0 010 2.8L12 18.8a4 4 0 01-5.6 0l-1.8-1.4a2 2 0 010-2.8zM9 10.2l5.8 5.8"/></svg></button>
+          <button class="tool" data-tool="picker" title="スポイト [I] — 作品から色を拾う"><svg viewBox="0 0 24 24"><path d="M14.5 4.5l5 5M17 2.5a2.1 2.1 0 013 3L17.5 8 16 6.5zM15.5 7.5L6 17l-2 4 4-2 9.5-9.5"/></svg></button>
+          <button class="tool" data-tool="hand" title="手のひら [H / Space] — ドラッグで移動"><svg viewBox="0 0 24 24"><path d="M8 11V5a1.5 1.5 0 013 0v5V4a1.5 1.5 0 013 0v6V5.5a1.5 1.5 0 013 0V14c0 4-2.5 7-6.5 7S5 18.5 4 16l-1.5-3.5a1.4 1.4 0 012.4-1.4L8 14z"/></svg></button>
+          <button class="tool" data-tool="zoom" title="ズーム [Z] — クリックで拡大 / Alt+クリックで縮小"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6M7 10h6M10 7v6"/></svg></button>
+          <div class="sep"></div>
+          <label class="swatch" title="ペンの色"><input type="color" id="penColor" value="#e8798c" /></label>
+          <div class="size" title="ブラシサイズ [ / ]">
+            <span class="size-dot" id="sizeDot"></span>
+            <input type="range" id="penSize" min="1" max="40" value="8" aria-label="ブラシサイズ" />
+            <b id="sizeNum">8</b>
+          </div>
+          <div class="sep"></div>
+          <button class="tool toggle" data-toggle="keep" title="線を残す [K] — オフだと描いた線はゆっくり消えます"><svg viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3zM12 14v7"/></svg></button>
+          <button class="tool toggle" data-toggle="flip" title="左右反転 [M] — 絵描きのデッサンチェック"><svg viewBox="0 0 24 24"><path d="M12 3v18M9 7L4 17h5zM15 7l5 10h-5z"/></svg></button>
+          <button class="tool toggle" data-toggle="mono" title="モノクロ表示 [G] — 明暗のバランスを見る"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 000-17z" fill="currentColor"/></svg></button>
+        </div>
+
+        <!-- キャンバス -->
+        <div class="viewport" id="viewport">
+          <div class="stage" id="stage">
+            <div class="paper" id="paper">
+              <img id="artwork" alt="" draggable="false" />
+              <video id="video" muted loop playsinline preload="auto"></video>
+              <video id="ghostPrev" class="ghost prev" muted playsinline preload="auto"></video>
+              <video id="ghostNext" class="ghost next" muted playsinline preload="auto"></video>
+            </div>
+          </div>
+          <canvas class="ink" id="ink"></canvas>
+
+          <!-- 作品を開いたときの情報カード -->
+          <article class="info-card" id="infoCard" aria-live="polite">
+            <button class="info-close" id="infoClose" title="たたむ [N]">—</button>
+            <p class="info-kicker" id="infoKicker"></p>
+            <h3 id="infoTitle"></h3>
+            <p class="info-cat" id="infoCat"></p>
+            <dl class="info-meta" id="infoMeta"></dl>
+            <p class="info-desc" id="infoDesc"></p>
+            <ul class="info-tags" id="infoTags"></ul>
+            <div class="info-palette" id="infoPalette"></div>
+          </article>
+          <button class="info-pill" id="infoPill" hidden>ⓘ 作品情報</button>
+
+          <!-- アニメ作品のタイムライン -->
+          <div class="timeline" id="timeline" hidden>
+            <button data-tl="play" id="tlPlay" title="再生 / 一時停止 [P]">❚❚</button>
+            <button data-tl="back" title="1コマ戻る [,]">⏮</button>
+            <button data-tl="fwd" title="1コマ進む [.]">⏭</button>
+            <div class="tl-track" id="tlTrack"><div class="tl-ticks" id="tlTicks"></div><div class="tl-head" id="tlHead"></div></div>
+            <span class="tl-frame" id="tlFrame">1 / 1</span>
+            <div class="tl-speed" role="group" aria-label="再生速度">
+              <button data-speed="0.25">0.25×</button><button data-speed="0.5">0.5×</button><button data-speed="1" class="is-on">1×</button>
+            </div>
+            <button data-tl="onion" id="tlOnion" title="オニオンスキン [O] — 停止中に前後のコマを透かして表示">◎ オニオン</button>
+          </div>
+
+          <!-- スマホ用ツール：見る / 描く / 消す -->
+          <div class="m-tools" id="mTools" role="toolbar" aria-label="タッチ用ツール">
+            <button data-mtool="view" class="is-on" title="見る：1本指で移動・スワイプで作品切替"><svg viewBox="0 0 24 24"><path d="M8 11V5a1.5 1.5 0 013 0v5V4a1.5 1.5 0 013 0v6V5.5a1.5 1.5 0 013 0V14c0 4-2.5 7-6.5 7S5 18.5 4 16l-1.5-3.5a1.4 1.4 0 012.4-1.4L8 14z"/></svg><span>見る</span></button>
+            <button data-mtool="pen" title="描く：1本指で描く・2本指で移動/拡大"><svg viewBox="0 0 24 24"><path d="M3 21l3.5-1 11-11-2.5-2.5-11 11L3 21z M15.5 5.5l2.5 2.5 2-2-2.5-2.5z"/></svg><span>描く</span></button>
+            <button data-mtool="eraser" title="消す"><svg viewBox="0 0 24 24"><path d="M8.5 20H20M4.6 14.6l8.8-8.8a2 2 0 012.8 0l3 3a2 2 0 010 2.8L12 18.8a4 4 0 01-5.6 0l-1.8-1.4a2 2 0 010-2.8zM9 10.2l5.8 5.8"/></svg><span>消す</span></button>
+            <label class="m-color" title="ペンの色"><span id="mColorDot"></span><input type="color" id="mPenColor" value="#e8798c" /></label>
+          </div>
+
+          <div class="toast" id="toast"></div>
+          <div class="hint" id="hint">ペンで描ける / ホイールで拡大 / ←→で作品切替</div>
+        </div>
+
+        <!-- 右パネル -->
+        <aside class="panels" id="panels">
+          <section class="panel panel-nav">
+            <h2>ナビゲーター</h2>
+            <div class="navigator" id="navigator"><img id="navImg" alt="" /><div class="nav-box" id="navBox"></div></div>
+          </section>
+
+          <section class="panel panel-prop" id="propPanel">
+            <h2>作品情報</h2>
+            <dl class="props" id="props"></dl>
+            <div class="palette" id="palette" title="クリックでペンの色に"></div>
+          </section>
+
+          <section class="panel panel-layers">
+            <h2>
+              <span>レイヤー <span class="count" id="count"></span></span>
+              <span class="layer-tools">
+                <button data-act="layerUp" title="選択中のレイヤーを上へ">▲</button>
+                <button data-act="layerDown" title="選択中のレイヤーを下へ">▼</button>
+                <button data-act="orderMenu" title="並び順の書き出し・リセット">⋯</button>
+              </span>
+            </h2>
+            <div class="order-menu" id="orderMenu" hidden>
+              <button data-act="copyOrder">並び順をコピー（works.jsのORDERに貼る）</button>
+              <button data-act="resetOrder">初期の並び順に戻す</button>
+            </div>
+            <ol class="layers" id="layers"></ol>
+          </section>
+        </aside>
+      </div>
+
+      <!-- ステータスバー -->
+      <footer class="statusbar">
+        <span id="stTool">ペン</span>
+        <span id="stZoom">100%</span>
+        <span id="stRot">0°</span>
+        <span id="stPos">x 0  y 0</span>
+        <span class="pressure"><i>筆圧</i><b><em id="stPress"></em></b></span>
+        <span id="stIndex" class="push">01 / 15</span>
+      </footer>
+
+      <!-- プロフィール -->
+      <div class="sheet" id="about" hidden>
+        <div class="sheet-card">
+          <button class="sheet-close" data-close>×</button>
+          <p class="kicker">PROFILE.layer</p>
+          <div class="pf-head">
+            <img class="pf-icon" id="pfIcon" alt="" />
+            <div>
+              <h2 id="pfName"></h2>
+              <p class="pf-kana" id="pfKana"></p>
+              <p class="aff" id="pfAff"></p>
+            </div>
+          </div>
+          <p class="statement" id="pfStatement"></p>
+          <dl class="pf-contact" id="pfContact"></dl>
+          <ul class="pf-links" id="pfLinks"></ul>
+        </div>
+      </div>
+
+      <!-- ショートカット -->
+      <div class="sheet" id="help" hidden>
+        <div class="sheet-card wide">
+          <button class="sheet-close" data-close>×</button>
+          <p class="kicker"><span class="d-only">SHORTCUTS</span><span class="m-only">HOW TO</span></p>
+          <ul class="touch-guide">
+            <li><b>スワイプ</b><span>左右にスワイプで作品を切り替え</span></li>
+            <li><b>ピンチ</b><span>2本指で拡大・縮小</span></li>
+            <li><b>ダブルタップ</b><span>その場所をズーム / もう一度で元に戻す</span></li>
+            <li><b>描く</b><span>下の「描く」を選ぶと1本指で落書きできます（2本指で移動）</span></li>
+            <li><b>長押し</b><span>レイヤーのサムネを長押しして並べ替え</span></li>
+            <li><b>パレット</b><span>上の色の丸をタップすると、その色で描けます</span></li>
+          </ul>
+          <div class="keys-grid">
+            <table class="keys">
+              <tr><th colspan="2">作品</th></tr>
+              <tr><td><kbd>←</kbd><kbd>→</kbd></td><td>作品を切り替え</td></tr>
+              <tr><td><kbd>N</kbd></td><td>作品情報を開く / 閉じる</td></tr>
+              <tr><td>ホイール / <kbd>+</kbd><kbd>−</kbd></td><td>ズーム</td></tr>
+              <tr><td><kbd>R</kbd> / <kbd>Shift</kbd>+<kbd>R</kbd></td><td>回転</td></tr>
+              <tr><td><kbd>0</kbd></td><td>画面に合わせる</td></tr>
+              <tr><td><kbd>F</kbd></td><td>パネルを隠す</td></tr>
+              <tr><th colspan="2">アニメ</th></tr>
+              <tr><td><kbd>P</kbd></td><td>再生 / 一時停止</td></tr>
+              <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>1コマ戻る / 進む</td></tr>
+              <tr><td><kbd>O</kbd></td><td>オニオンスキン</td></tr>
+            </table>
+            <table class="keys">
+              <tr><th colspan="2">ツール</th></tr>
+              <tr><td><kbd>B</kbd></td><td>ペン（<kbd>Alt</kbd>でスポイト）</td></tr>
+              <tr><td><kbd>E</kbd></td><td>消しゴム</td></tr>
+              <tr><td><kbd>I</kbd></td><td>スポイト</td></tr>
+              <tr><td><kbd>H</kbd> / <kbd>Space</kbd></td><td>手のひら</td></tr>
+              <tr><td><kbd>Z</kbd></td><td>ズーム</td></tr>
+              <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>ブラシサイズ</td></tr>
+              <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>元に戻す</td></tr>
+              <tr><td><kbd>Delete</kbd></td><td>線をすべて消す</td></tr>
+              <tr><td><kbd>K</kbd></td><td>線を残す</td></tr>
+              <tr><td><kbd>M</kbd> / <kbd>G</kbd></td><td>左右反転 / モノクロ</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 起動画面 -->
+      <div class="boot" id="boot">
+        <div class="boot-inner">
+          <p class="boot-logo">LINK<span>/</span>PAD</p>
+          <button class="touch" id="touch" aria-label="長押しで起動">
+            <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="fill" id="touchFill" cx="50" cy="50" r="44"/></svg>
+            <span>HOLD</span>
+          </button>
+          <p class="boot-msg">ペン先を画面に当てて、長押ししてください<br><small>（スマホは画面のどこを長押ししても起動します）</small></p>
+          <button class="boot-skip" id="skip">skip →</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="pen-rest" aria-hidden="true"></div>
+  </main>
+
+  <!-- ペンカーソル -->
+  <div class="cursor" id="cursor" aria-hidden="true">
+    <div class="tip" id="cursorTip"></div>
+    <svg class="stylus" viewBox="0 0 40 200"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#cfdde6"/><stop offset=".45" stop-color="#ffffff"/><stop offset="1" stop-color="#b8cad6"/></linearGradient></defs><path d="M20 0 L26 26 L26 200 L14 200 L14 26 Z" fill="url(#g)"/><rect x="14" y="70" width="12" height="22" rx="3" fill="#a9d8ec"/><rect x="25" y="74" width="3" height="8" rx="1.5" fill="#6ec6e6"/><path d="M20 0 L23 12 L17 12Z" fill="#7d93a2"/></svg>
+  </div>
+
+  <!-- オニオンスキン用フィルタ：白はそのまま、暗い線だけ色づける -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="onionPrev" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.1701 0.5722 0.0578 0 0.2  0.0850 0.2861 0.0289 0 0.6  0.0213 0.0715 0.0072 0 0.9  0 0 0 1 0"/></filter>
+    <filter id="onionNext" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.0106 0.0358 0.0036 0 0.95  0.1488 0.5006 0.0505 0 0.3  0.1276 0.4291 0.0433 0 0.4  0 0 0 1 0"/></filter>
+  </svg>
+
+  <script src="works.js"></script>
+  <script src="meta.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
